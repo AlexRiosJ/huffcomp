@@ -1,14 +1,11 @@
+use std::char;
 use std::cmp::Ordering;
-use std::cmp::Reverse;
 use std::collections::{BinaryHeap, HashMap};
-use std::env;
 use std::error::Error;
 use std::fmt;
 use std::fs;
 
 use NodeType::{Character, Joint};
-
-const MAX_CHAR_VALUE: char = '\u{ff}';
 
 pub struct Config {
     flag: String,
@@ -23,14 +20,9 @@ impl HuffmanTree {
     pub fn new(freq_map: &HashMap<char, u32>) -> HuffmanTree {
         let mut queue = BinaryHeap::new();
 
-        for i in 0..MAX_CHAR_VALUE as u32 {
-            if freq_map.contains_key(&(i as u8 as char)) {
-                let new_node = Node::new(
-                    Character(i as u8 as char),
-                    *freq_map.get(&(i as u8 as char)).unwrap(),
-                );
-                queue.push(new_node);
-            }
+        for (ch, freq) in freq_map {
+            let new_node = Node::new(Character(*ch), *freq);
+            queue.push(new_node);
         }
 
         let mut left_node: Node;
@@ -169,17 +161,31 @@ fn compress(filename: String) -> Result<(), Box<dyn Error>> {
     let contents = fs::read_to_string(filename)?;
     // println!("{}", contents.len());
 
-    let freq_map = char_freq(contents);
+    let freq_map = char_freq(&contents);
 
     let tree = HuffmanTree::new(&freq_map);
     tree.print();
 
-    let code_table: HashMap<char, &str> = HashMap::new();
+    let mut code_table: HashMap<char, String> = HashMap::new();
+    fill_code_table(&mut code_table, &tree);
+
+    let mut encoded_string = String::from("");
+
+    for c in contents.chars() {
+        encoded_string.push_str(code_table.get(&c).unwrap());
+    }
+
+    for _ in 0..encoded_string.len() % 8 {
+        encoded_string.push_str("0");
+    }
+
+    println!("{}", encoded_string.len() / 8);
+    println!("{}", encoded_string);
 
     Ok(())
 }
 
-fn char_freq(contents: String) -> HashMap<char, u32> {
+fn char_freq(contents: &String) -> HashMap<char, u32> {
     let mut freq_map: HashMap<char, u32> = HashMap::new();
 
     for c in contents.chars() {
@@ -188,4 +194,32 @@ fn char_freq(contents: String) -> HashMap<char, u32> {
     }
 
     freq_map
+}
+
+fn fill_code_table(code_table: &mut HashMap<char, String>, tree: &HuffmanTree) {
+    fill_code_table_recursive(code_table, &tree.get_root(), String::from("")).unwrap();
+}
+
+fn fill_code_table_recursive<'a>(
+    code_table: &'a mut HashMap<char, String>,
+    node: &Node,
+    mask: String,
+) -> Result<(), &'static str> {
+    if let None = &node.left {
+        let character: char;
+        if let Character(c) = &node.value {
+            character = *c;
+        } else {
+            return Err("Something went wrong with the table creation");
+        }
+        code_table.insert(character, mask);
+        return Ok(());
+    }
+
+    Ok(
+        if let (Some(left), Some(right)) = (&node.left, &node.right) {
+            fill_code_table_recursive(code_table, &*left, format!("{}0", mask))?;
+            fill_code_table_recursive(code_table, &*right, format!("{}1", mask))?;
+        },
+    )
 }
