@@ -17,11 +17,11 @@ struct HuffmanTree {
 }
 
 impl HuffmanTree {
-    pub fn new(freq_map: &HashMap<char, u32>) -> HuffmanTree {
+    pub fn new(freq_map: &HashMap<u32, u32>) -> HuffmanTree {
         let mut queue = BinaryHeap::new();
 
         for (ch, freq) in freq_map {
-            let new_node = Node::new(Character(*ch), *freq);
+            let new_node = Node::new(Character(*ch as u32), *freq);
             queue.push(new_node);
         }
 
@@ -94,11 +94,11 @@ impl Node {
 impl fmt::Display for Node {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self.value {
-            Character(c) => match c {
+            Character(c) => match char::from_u32(c).unwrap() {
                 '\n' => write!(f, "[\\n, {}]", self.frequency),
                 '\r' => write!(f, "[\\r, {}]", self.frequency),
                 '\0' => write!(f, "[\\0, {}]", self.frequency),
-                _ => write!(f, "[{}, {}]", c, self.frequency),
+                _ => write!(f, "[{}, {}]", char::from_u32(c).unwrap(), self.frequency),
             },
             Joint => write!(f, "[{}]", self.frequency),
         }
@@ -125,7 +125,7 @@ impl PartialEq for Node {
 
 #[derive(Eq, PartialEq, Debug)]
 enum NodeType {
-    Character(char),
+    Character(u32),
     Joint,
 }
 
@@ -166,13 +166,13 @@ fn compress(filename: String) -> Result<(), Box<dyn Error>> {
     let tree = HuffmanTree::new(&freq_map);
     tree.print();
 
-    let mut code_table: HashMap<char, String> = HashMap::new();
+    let mut code_table: HashMap<u32, String> = HashMap::new();
     fill_code_table(&mut code_table, &tree);
 
     let mut encoded_string = String::from("");
 
     for c in contents.chars() {
-        encoded_string.push_str(code_table.get(&c).unwrap());
+        encoded_string.push_str(code_table.get(&(c as u32)).unwrap());
     }
 
     for _ in 0..encoded_string.len() % 8 {
@@ -180,33 +180,32 @@ fn compress(filename: String) -> Result<(), Box<dyn Error>> {
     }
 
     println!("{}", encoded_string.len() / 8);
-    println!("{}", encoded_string);
 
     Ok(())
 }
 
-fn char_freq(contents: &String) -> HashMap<char, u32> {
-    let mut freq_map: HashMap<char, u32> = HashMap::new();
+fn char_freq(contents: &String) -> HashMap<u32, u32> {
+    let mut freq_map: HashMap<u32, u32> = HashMap::new();
 
     for c in contents.chars() {
-        let count = freq_map.entry(c).or_insert(0);
+        let count = freq_map.entry(c as u32).or_insert(0);
         *count += 1;
     }
 
     freq_map
 }
 
-fn fill_code_table(code_table: &mut HashMap<char, String>, tree: &HuffmanTree) {
+fn fill_code_table(code_table: &mut HashMap<u32, String>, tree: &HuffmanTree) {
     fill_code_table_recursive(code_table, &tree.get_root(), String::from("")).unwrap();
 }
 
 fn fill_code_table_recursive<'a>(
-    code_table: &'a mut HashMap<char, String>,
+    code_table: &'a mut HashMap<u32, String>,
     node: &Node,
     mask: String,
 ) -> Result<(), &'static str> {
     if let None = &node.left {
-        let character: char;
+        let character: u32;
         if let Character(c) = &node.value {
             character = *c;
         } else {
