@@ -209,7 +209,7 @@ fn compress(filename: String) -> Result<(), Box<dyn Error>> {
     // Save all the bits into a bytes vector and write to output file.
     for (index, c) in encoded_string.char_indices() {
         encoded_bytes[index / 8] <<= 1;
-        encoded_bytes[index / 8] += c.to_digit(2).unwrap() as u8;
+        encoded_bytes[index / 8] += c as u8 - '0' as u8;
     }
     output_file.write(&encoded_bytes)?;
 
