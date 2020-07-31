@@ -84,10 +84,7 @@ struct Node {
 impl Node {
     pub fn new(value: NodeType, frequency: u32) -> Node {
         Node {
-            value: match value {
-                Character(c) => Character(c),
-                Joint => Joint,
-            },
+            value,
             frequency,
             left: None,
             right: None,
