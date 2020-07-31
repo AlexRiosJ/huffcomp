@@ -207,17 +207,9 @@ fn compress(filename: String) -> Result<(), Box<dyn Error>> {
     }
 
     // Save all the bits into a bytes vector and write to output file.
-    let mut counter = 0;
-    let mut mask_count = 0;
-    for c in encoded_string.chars() {
-        encoded_bytes[counter / 8] += c.to_digit(2).unwrap() as u8;
-        if mask_count < 7 {
-            encoded_bytes[counter / 8] <<= 1;
-            mask_count += 1;
-        } else {
-            mask_count = 0;
-        }
-        counter += 1;
+    for (index, c) in encoded_string.char_indices() {
+        encoded_bytes[index / 8] <<= 1;
+        encoded_bytes[index / 8] += c.to_digit(2).unwrap() as u8;
     }
     output_file.write(&encoded_bytes)?;
 
