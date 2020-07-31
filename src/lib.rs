@@ -1,9 +1,12 @@
-use std::char;
+use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
 use std::collections::{BinaryHeap, HashMap};
 use std::error::Error;
 use std::fmt;
 use std::fs;
+use std::fs::File;
+use std::io::Write;
+use std::{char, usize};
 
 use NodeType::{Character, Joint};
 
@@ -12,6 +15,7 @@ pub struct Config {
     filename: String,
 }
 
+#[derive(Serialize, Deserialize)]
 struct HuffmanTree {
     root: Node,
 }
@@ -45,13 +49,13 @@ impl HuffmanTree {
         }
     }
 
-    pub fn print(&self) {
+    pub fn _print(&self) {
         println!("-------------Printing Tree--------------");
-        self.print_recursive(&self.root, 0);
+        self._print_recursive(&self.root, 0);
         println!("----------------------------------------");
     }
 
-    pub fn print_recursive(&self, node: &Node, spaces: u32) {
+    fn _print_recursive(&self, node: &Node, spaces: u32) {
         let mut temp = String::from("");
         for _ in 0..spaces {
             temp.push_str("|  ");
@@ -59,8 +63,8 @@ impl HuffmanTree {
         println!("{}{}", temp, node);
 
         if let (Some(left), Some(right)) = (&node.left, &node.right) {
-            self.print_recursive(&*left, spaces + 1);
-            self.print_recursive(&*right, spaces + 1);
+            self._print_recursive(&*left, spaces + 1);
+            self._print_recursive(&*right, spaces + 1);
         }
     }
 
@@ -69,7 +73,7 @@ impl HuffmanTree {
     }
 }
 
-#[derive(Eq)]
+#[derive(Eq, Serialize, Deserialize)]
 struct Node {
     value: NodeType,
     frequency: u32,
@@ -123,7 +127,7 @@ impl PartialEq for Node {
     }
 }
 
-#[derive(Eq, PartialEq, Debug)]
+#[derive(Eq, PartialEq, Debug, Serialize, Deserialize)]
 enum NodeType {
     Character(u32),
     Joint,
@@ -158,28 +162,67 @@ pub fn run(config: Config) -> Result<(), String> {
 }
 
 fn compress(filename: String) -> Result<(), Box<dyn Error>> {
-    let contents = fs::read_to_string(filename)?;
-    // println!("{}", contents.len());
+    println!("Compressing '{}'. . .", filename);
+    let contents = fs::read_to_string(&filename)?;
 
+    // Generate characters' frequency map with contents.
     let freq_map = char_freq(&contents);
 
+    // Create tree with characters' frequency map.
     let tree = HuffmanTree::new(&freq_map);
-    tree.print();
+    // tree._print();
 
+    // Serialize HuffmanTree struct.
+    let tree_bytes: Vec<u8> = bincode::serialize(&tree)?;
+    let tree_size = tree_bytes.len().to_be_bytes();
+
+    // Create output file.
+    let output_filename = format!("{}.huff", &filename);
+    let mut output_file = File::create(&output_filename)?;
+
+    // Write HuffmanTree byte len and HuffmanTree bytes.
+    output_file.write_all(&tree_size)?;
+    output_file.write_all(&tree_bytes)?;
+
+    // Create and fill the code table map.
     let mut code_table: HashMap<u32, String> = HashMap::new();
     fill_code_table(&mut code_table, &tree);
 
+    // Generate the encoded string.
     let mut encoded_string = String::from("");
-
     for c in contents.chars() {
         encoded_string.push_str(code_table.get(&(c as u32)).unwrap());
     }
 
-    for _ in 0..encoded_string.len() % 8 {
+    // Write encoded string bits length.
+    output_file.write(&encoded_string.len().to_be_bytes())?;
+
+    while encoded_string.len() % 8 != 0 {
         encoded_string.push_str("0");
     }
 
-    println!("{}", encoded_string.len() / 8);
+    let mut encoded_bytes: Vec<u8> = "".bytes().collect();
+    for _ in 0..encoded_string.len() / 8 {
+        encoded_bytes.push(0);
+    }
+
+    // Save all the bits into a bytes vector and write to output file.
+    let mut counter = 0;
+    let mut mask_count = 0;
+    for c in encoded_string.chars() {
+        encoded_bytes[counter / 8] += c.to_digit(2).unwrap() as u8;
+        if mask_count < 7 {
+            encoded_bytes[counter / 8] <<= 1;
+            mask_count += 1;
+        } else {
+            mask_count = 0;
+        }
+        counter += 1;
+    }
+    output_file.write(&encoded_bytes)?;
+
+    println!("Compression finished!");
+    println!("Output file: {}", output_filename);
 
     Ok(())
 }
@@ -222,3 +265,26 @@ fn fill_code_table_recursive<'a>(
         },
     )
 }
+
+// Decompressing Tree
+// let encoded = fs::read(&output_filename)?;
+// let mut tree_size_output: [u8; 8] = [0; 8];
+
+// for i in 0..8 {
+//     tree_size_output[i] = encoded[i];
+// }
+
+// let tree_size_value = usize::from_be_bytes(tree_size_output);
+// let tree_encoded = &encoded[8..(tree_size_value + 8)];
+
+// let tree_output: HuffmanTree = bincode::deserialize(tree_encoded)?;
+// tree_output._print();
+
+// let mut code_table: HashMap<u32, String> = HashMap::new();
+// fill_code_table(&mut code_table, &tree);
+
+// let mut encoded_string = String::from("");
+
+// for c in contents.chars() {
+//     encoded_string.push_str(code_table.get(&(c as u32)).unwrap());
+// }
