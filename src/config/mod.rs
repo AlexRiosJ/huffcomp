@@ -4,18 +4,40 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn new(mut args: std::env::Args) -> Result<Config, &'static str> {
-        args.next();
+    pub fn new(mut args: std::env::Args) -> Result<Config, String> {
+        let mut flag = String::from("");
+        let mut filename = String::from("");
 
-        let flag = match args.next() {
-            Some(arg) => arg,
-            None => return Err("Did not get a configuration flag."),
-        };
-
-        let filename = match args.next() {
-            Some(arg) => arg,
-            None => return Err("Did not get a file name."),
-        };
+        if args.len() == 1 {
+            args.next();
+            return Ok(Config {
+                flag,
+                filename: String::from(""),
+            });
+        } else if args.len() == 2 {
+            args.next();
+            flag = match args.next() {
+                Some(arg) => arg,
+                None => return Err(String::from("Something went wrong with the given flag.")),
+            };
+        } else if args.len() == 3 {
+            args.next();
+            flag = match args.next() {
+                Some(arg) => arg,
+                None => return Err(String::from("Something went wrong with the given flag.")),
+            };
+            filename = match args.next() {
+                Some(arg) => arg,
+                None => {
+                    return Err(String::from(
+                        "Something went wrong with the given filename.",
+                    ))
+                }
+            };
+        } else {
+            let error_message = format!("\nExpected:\n\thuffcomp [OPTIONS] [FILENAME]\n\nFound:\n\t{} arguments were given.\n\nSee 'huffman --help' for more information.\n", args.len());
+            return Err(error_message);
+        }
 
         Ok(Config { flag, filename })
     }

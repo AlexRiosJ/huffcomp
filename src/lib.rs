@@ -13,16 +13,18 @@ use config::Config;
 
 pub fn run(config: Config) -> Result<(), String> {
     match &config.flag[..] {
-        "-c" => Ok(compress(config.filename).unwrap()),
-        "-d" => Ok(decompress(config.filename).unwrap()),
+        "-c" | "--compress" => Ok(compress(config.filename).unwrap()),
+        "-d" | "--decompress" => Ok(decompress(config.filename).unwrap()),
+        "-h" | "--help" | "" => Ok(help_message()),
         _ => {
-            let error_message = format!("Found argument '{}' which wasn't expected\n\nUSAGE:\n\thuffcomp [OPTION] [FILENAME]\n\n", config.flag);
+            let error_message = format!("\n\tFound argument '{}' which wasn't expected\n\nSee 'huffcomp --help' for more information.\n\n", config.flag);
             return Err(error_message);
         }
     }
 }
 
 fn compress(filename: String) -> Result<(), Box<dyn Error>> {
+    println!("{}", filename);
     println!("Compressing '{}'. . .", filename);
     let contents = fs::read_to_string(&filename)?;
 
@@ -136,4 +138,16 @@ fn decompress(filename: String) -> Result<(), Box<dyn Error>> {
     println!("Output file: {}", output_filename);
 
     Ok(())
+}
+
+fn help_message() {
+    println!("Huffman coding for text files");
+    println!();
+    println!("USAGE:");
+    println!("\thuffcomp [OPTIONS] [TEXT_FILE]");
+    println!();
+    println!("OPTIONS:");
+    println!("\t-c, --compress\t\tCompress the given text file");
+    println!("\t-d, --decompress\tDecompress a valid .huff file");
+    println!("");
 }
