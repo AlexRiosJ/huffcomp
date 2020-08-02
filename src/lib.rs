@@ -151,6 +151,7 @@ impl Config {
 pub fn run(config: Config) -> Result<(), String> {
     match &config.flag[..] {
         "-c" => Ok(compress(config.filename).unwrap()),
+        "-d" => Ok(decompress(config.filename).unwrap()),
         _ => {
             let error_message = format!("Found argument '{}' which wasn't expected\n\nUSAGE:\n\thuffcomp [OPTION] [FILENAME]\n\n", config.flag);
             return Err(error_message);
@@ -216,6 +217,64 @@ fn compress(filename: String) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+fn decompress(filename: String) -> Result<(), Box<dyn Error>> {
+    println!("Decompressing '{}'. . .", filename);
+    let encoded = fs::read(&filename)?;
+    let mut tree_size: [u8; 8] = [0; 8];
+
+    for i in 0..8 {
+        tree_size[i] = encoded[i];
+    }
+
+    let tree_size_value = usize::from_be_bytes(tree_size);
+    let tree_encoded = &encoded[8..(tree_size_value + 8)];
+    let tree: HuffmanTree = bincode::deserialize(tree_encoded)?;
+    let mut node = tree.get_root();
+
+    let mut bits_to_decode: [u8; 8] = [0; 8];
+    for i in 0..8 {
+        bits_to_decode[i] = encoded[i + (tree_size_value + 8)];
+    }
+    let bits_to_decode = usize::from_be_bytes(bits_to_decode);
+
+    let bytes_encoded = &encoded[(tree_size_value + 16)..];
+
+    let output_filename = format!("{}d.txt", &filename);
+    let mut output_file = File::create(&output_filename)?;
+    let mut output_string = String::from("");
+
+    let mut bit_counter = 0;
+    for byte in bytes_encoded {
+        for i in 0..8 {
+            let mask = 0x80 >> i;
+            let bit = (mask & byte) >> (7 - i);
+
+            if let (Some(left), Some(right)) = (&node.left, &node.right) {
+                node = if bit == 1 { &*right } else { &*left };
+                if let None = node.left {
+                    if let Character(character) = node.value {
+                        let chars = char::from_u32(character).unwrap();
+                        output_string.push(chars);
+                    }
+                    node = tree.get_root();
+                }
+            }
+
+            bit_counter += 1;
+            if bit_counter == bits_to_decode {
+                break;
+            }
+        }
+    }
+
+    output_file.write(output_string.as_bytes())?;
+
+    println!("Decompression finished!");
+    println!("Output file: {}", output_filename);
+
+    Ok(())
+}
+
 fn char_freq(contents: &String) -> HashMap<u32, u32> {
     let mut freq_map: HashMap<u32, u32> = HashMap::new();
 
@@ -254,26 +313,3 @@ fn fill_code_table_recursive<'a>(
         },
     )
 }
-
-// Decompressing Tree
-// let encoded = fs::read(&output_filename)?;
-// let mut tree_size_output: [u8; 8] = [0; 8];
-
-// for i in 0..8 {
-//     tree_size_output[i] = encoded[i];
-// }
-
-// let tree_size_value = usize::from_be_bytes(tree_size_output);
-// let tree_encoded = &encoded[8..(tree_size_value + 8)];
-
-// let tree_output: HuffmanTree = bincode::deserialize(tree_encoded)?;
-// tree_output._print();
-
-// let mut code_table: HashMap<u32, String> = HashMap::new();
-// fill_code_table(&mut code_table, &tree);
-
-// let mut encoded_string = String::from("");
-
-// for c in contents.chars() {
-//     encoded_string.push_str(code_table.get(&(c as u32)).unwrap());
-// }
