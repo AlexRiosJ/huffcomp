@@ -1,7 +1,7 @@
 use std::env;
 use std::process;
 
-use huffcomp::Config;
+use huffcomp::config::Config;
 
 fn main() {
     let config = Config::new(env::args()).unwrap_or_else(|err| {
