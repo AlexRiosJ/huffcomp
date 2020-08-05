@@ -10,10 +10,7 @@ impl Config {
 
         if args.len() == 1 {
             args.next();
-            return Ok(Config {
-                flag,
-                filename: String::from(""),
-            });
+            return Ok(Config { flag, filename });
         } else if args.len() == 2 {
             args.next();
             flag = match args.next() {

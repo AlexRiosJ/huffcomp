@@ -3,6 +3,7 @@ use std::error::Error;
 use std::fs;
 use std::fs::File;
 use std::io::Write;
+use std::path::Path;
 use std::{char, usize};
 
 mod huffman_tree;
@@ -13,8 +14,18 @@ use config::Config;
 
 pub fn run(config: Config) -> Result<(), String> {
     match &config.flag[..] {
-        "-c" | "--compress" => Ok(compress(config.filename).unwrap()),
-        "-d" | "--decompress" => Ok(decompress(config.filename).unwrap()),
+        "-c" | "--compress" => {
+            if let Err(err) = compress(config.filename) {
+                return Err(err.to_string());
+            }
+            Ok(())
+        }
+        "-d" | "--decompress" => {
+            if let Err(err) = decompress(config.filename) {
+                return Err(err.to_string());
+            }
+            Ok(())
+        }
         "-h" | "--help" | "" => Ok(help_message()),
         _ => {
             let error_message = format!("\n\tFound argument '{}' which wasn't expected\n\nSee 'huffcomp --help' for more information.\n\n", config.flag);
@@ -24,7 +35,6 @@ pub fn run(config: Config) -> Result<(), String> {
 }
 
 fn compress(filename: String) -> Result<(), Box<dyn Error>> {
-    println!("{}", filename);
     println!("Compressing '{}'. . .", filename);
     let contents = fs::read_to_string(&filename)?;
 
@@ -32,7 +42,7 @@ fn compress(filename: String) -> Result<(), Box<dyn Error>> {
     let freq_map = huffman_tree::char_freq(&contents);
 
     // Create tree with characters' frequency map.
-    let tree = huffman_tree::HuffmanTree::new(&freq_map);
+    let tree = HuffmanTree::new(&freq_map);
     // tree._print();
 
     // Serialize HuffmanTree struct.
@@ -83,6 +93,21 @@ fn compress(filename: String) -> Result<(), Box<dyn Error>> {
 }
 
 fn decompress(filename: String) -> Result<(), Box<dyn Error>> {
+    // let filename_extension = Path::new(&filename).extension();
+
+    // match filename_extension {
+    //     Some(ext) => {
+    //         if ext != "huff" {
+    //             eprintln!("Input error: File must have the correct extension.\n\tExpected:\t\"huff\"\n\tFound:\t\t{:?}", ext);
+    //             return Ok(());
+    //         }
+    //     }
+    //     None => {
+    //         eprintln!("Input error: File must have \"huff\" extension.");
+    //         return Ok(());
+    //     }
+    // }
+
     println!("Decompressing '{}'. . .", filename);
     let encoded = fs::read(&filename)?;
     let mut tree_size: [u8; 8] = [0; 8];
@@ -144,7 +169,7 @@ fn help_message() {
     println!("Huffman coding for text files");
     println!();
     println!("USAGE:");
-    println!("\thuffcomp [OPTIONS] [TEXT_FILE]");
+    println!("\thuffcomp [OPTIONS] [FILENAME]");
     println!();
     println!("OPTIONS:");
     println!("\t-c, --compress\t\tCompress the given text file");
