@@ -11,6 +11,8 @@ use huffman_tree::node::NodeType::Character;
 use huffman_tree::HuffmanTree;
 pub mod config;
 use config::Config;
+mod errors;
+use errors::InputError;
 
 pub fn run(config: Config) -> Result<(), String> {
     match &config.flag[..] {
@@ -35,7 +37,6 @@ pub fn run(config: Config) -> Result<(), String> {
 }
 
 fn compress(filename: String) -> Result<(), Box<dyn Error>> {
-    println!("Compressing '{}'. . .", filename);
     let contents = fs::read_to_string(&filename)?;
 
     // Generate characters' frequency map with contents.
@@ -52,6 +53,8 @@ fn compress(filename: String) -> Result<(), Box<dyn Error>> {
     // Create output file.
     let output_filename = format!("{}.huff", &filename);
     let mut output_file = File::create(&output_filename)?;
+
+    println!("Compressing '{}'. . .", filename);
 
     // Write HuffmanTree byte len and HuffmanTree bytes.
     output_file.write_all(&tree_size)?;
@@ -93,22 +96,21 @@ fn compress(filename: String) -> Result<(), Box<dyn Error>> {
 }
 
 fn decompress(filename: String) -> Result<(), Box<dyn Error>> {
-    // let filename_extension = Path::new(&filename).extension();
+    let filename_extension = Path::new(&filename).extension();
 
-    // match filename_extension {
-    //     Some(ext) => {
-    //         if ext != "huff" {
-    //             eprintln!("Input error: File must have the correct extension.\n\tExpected:\t\"huff\"\n\tFound:\t\t{:?}", ext);
-    //             return Ok(());
-    //         }
-    //     }
-    //     None => {
-    //         eprintln!("Input error: File must have \"huff\" extension.");
-    //         return Ok(());
-    //     }
-    // }
+    match filename_extension {
+        Some(ext) => {
+            if ext != "huff" {
+                let error_message = format!("File must have the correct extension.\n\tExpected:\t\"huff\"\n\tFound:\t\t{:?}\n", ext);
+                return Err(Box::new(InputError(error_message)));
+            }
+        }
+        None => {
+            let error_message = String::from("File must have \"huff\" extension.\n");
+            return Err(Box::new(InputError(error_message)));
+        }
+    }
 
-    println!("Decompressing '{}'. . .", filename);
     let encoded = fs::read(&filename)?;
     let mut tree_size: [u8; 8] = [0; 8];
 
@@ -120,6 +122,8 @@ fn decompress(filename: String) -> Result<(), Box<dyn Error>> {
     let tree_encoded = &encoded[8..(tree_size_value + 8)];
     let tree: HuffmanTree = bincode::deserialize(tree_encoded)?;
     let mut node = tree.get_root();
+
+    println!("Decompressing '{}'. . .", filename);
 
     let mut bits_to_decode: [u8; 8] = [0; 8];
     for i in 0..8 {
