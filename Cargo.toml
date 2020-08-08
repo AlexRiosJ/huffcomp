@@ -1,8 +1,15 @@
 [package]
 name = "huffcomp"
-version = "0.1.0"
+version = "0.1.16"
 authors = ["Alejandro Ríos Jasso <jassoalex97@hotmail.com>"]
 edition = "2018"
+license = "MIT OR Apache-2.0"
+description = "Huffman coding program for compression and decompression of text files"
+readme = "README.md"
+homepage = "https://github.com/AlexRiosJ/huffcomp"
+repository = "https://github.com/AlexRiosJ/huffcomp"
+keywords = ["huffman", "compression", "decompression"]
+categories = ["command-line-utilities"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
