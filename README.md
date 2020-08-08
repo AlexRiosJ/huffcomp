@@ -4,7 +4,7 @@ Huffman coding program for compression and decompression of text files.
 
 ## Installation
 
-If you're a **Rust programmer**, ripgrep can be installed with `cargo`.
+If you're a **Rust programmer**, huffcomp can be installed with `cargo`.
 
 ```
 $ cargo install huffcomp
@@ -42,6 +42,6 @@ $ huffcomp -d <huffcomp_file>
 
 #### Used Techniques
 
-- Huffman coding tree implementation.
+- Huffman Coding Tree implementation.
 - Bit level operations.
 - Write and read files.
