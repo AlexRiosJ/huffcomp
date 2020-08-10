@@ -40,6 +40,10 @@ To decompress the file:
 $ huffcomp -d <huffcomp_file>
 ```
 
+### Contribute
+
+To contribute, please fork the [repository](https://github.com/AlexRiosJ/huffcomp). If you find any bugs, issues or suggestions, please post your Issues and create your Pull Requests.
+
 #### Used Techniques
 
 - Huffman Coding Tree implementation.
