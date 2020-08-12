@@ -40,6 +40,11 @@ pub fn run(config: Config) -> Result<(), String> {
 fn compress(filename: String) -> Result<(), Box<dyn Error>> {
     let contents = fs::read_to_string(&filename)?;
 
+    if contents.len() == 0 {
+        let error_message = format!("File must not be empty");
+        return Err(Box::new(InputError(error_message)));
+    }
+
     // Generate characters' frequency map with contents.
     let freq_map = huffman_tree::char_freq(&contents);
 
@@ -113,6 +118,12 @@ fn decompress(filename: String) -> Result<(), Box<dyn Error>> {
     }
 
     let encoded = fs::read(&filename)?;
+
+    if encoded.len() == 0 {
+        let error_message = format!("File must not be empty");
+        return Err(Box::new(InputError(error_message)));
+    }
+
     let mut tree_size: [u8; 8] = [0; 8];
 
     for i in 0..8 {
