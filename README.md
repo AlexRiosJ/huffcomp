@@ -1,4 +1,5 @@
 # huffcomp
+[![Crate](https://img.shields.io/crates/v/huffcomp.svg)](https://crates.io/crates/huffcomp)
 
 Huffman coding program for compression and decompression of text files.
 
