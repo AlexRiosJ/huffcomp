@@ -31,7 +31,7 @@ pub fn run(config: Config) -> Result<(), String> {
         "-V" | "--version" => Ok(version_message()),
         "-h" | "--help" | "" => Ok(help_message()),
         _ => {
-            let error_message = format!("\n\tFound argument '{}' which wasn't expected\n\nSee 'huffcomp --help' for more information.\n\n", config.flag);
+            let error_message = format!("\n\tFound argument '{}' which wasn't expected\n\nSee 'huffcomp --help' for more information.\n", config.flag);
             return Err(error_message);
         }
     }

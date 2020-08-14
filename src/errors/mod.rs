@@ -6,7 +6,7 @@ pub struct InputError(pub String);
 
 impl fmt::Display for InputError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Input error: {}", self.0)
+        write!(f, "invalid input: {}", self.0)
     }
 }
 
