@@ -1,6 +1,6 @@
 [package]
 name = "huffcomp"
-version = "0.1.22"
+version = "0.1.23"
 authors = ["Alejandro Ríos Jasso <jassoalex97@hotmail.com>"]
 edition = "2018"
 license = "MIT OR Apache-2.0"
