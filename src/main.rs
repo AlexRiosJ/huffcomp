@@ -11,6 +11,6 @@ fn main() {
 
     if let Err(e) = huffcomp::run(config) {
         eprint!("Application error:\n\t{}\n", e);
-        process::exit(1);
+        process::exit(2);
     }
 }

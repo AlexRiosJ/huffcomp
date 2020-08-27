@@ -28,8 +28,8 @@ pub fn run(config: Config) -> Result<(), String> {
             }
             Ok(())
         }
-        "-V" | "--version" => Ok(version_message()),
-        "-h" | "--help" | "" => Ok(help_message()),
+        "-V" | "--version" => Ok(print_version_message()),
+        "-h" | "--help" | "" => Ok(print_help_message()),
         _ => {
             let error_message = format!("\n\tFound argument '{}' which wasn't expected\n\nSee 'huffcomp --help' for more information.\n", config.flag);
             return Err(error_message);
@@ -181,11 +181,12 @@ fn decompress(filename: String) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn help_message() {
-    println!("Huffman coding program for compression and decompression of text files");
+fn print_help_message() {
+    const DESCRIPTION: &'static str = env!("CARGO_PKG_DESCRIPTION");
+    println!("{}", DESCRIPTION);
     println!();
     println!("USAGE:");
-    println!("\thuffcomp [OPTIONS] [FILENAME]");
+    println!("\thuffcomp [OPTION] [FILENAME]");
     println!();
     println!("OPTIONS:");
     println!("\t-c, --compress\t\tCompress the given text file");
@@ -194,7 +195,7 @@ fn help_message() {
     println!();
 }
 
-fn version_message() {
+fn print_version_message() {
     const VERSION: &'static str = env!("CARGO_PKG_VERSION");
     const NAME: &'static str = env!("CARGO_PKG_NAME");
     println!("{} {}", NAME, VERSION);
